@@ -32,16 +32,17 @@ export function Footer() {
   ]
 
   return (
-    <footer className="bg-slate-900 text-white">
+    <footer className="bg-black text-white">
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-4 gap-8">
           {/* Logo and Description */}
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-slate-900 font-bold text-lg">N</span>
-              </div>
-              <span className="text-xl font-display font-bold">Núcleo</span>
+              <img
+                src="/logo_white.png"
+                alt="Núcleo Logo"
+                className="h-8 w-auto"
+              />
             </div>
             <p className="text-slate-300 mb-6 max-w-md">
               Hacemos vida juntos. Generamos nuevos espacios de conexión entre Dios y las personas, 

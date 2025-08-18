@@ -23,12 +23,11 @@ export function Header() {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-slate-900 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg lg:text-xl">N</span>
-            </div>
-            <span className="text-xl lg:text-2xl font-display font-bold text-slate-900">
-              Núcleo
-            </span>
+            <img
+              src="/logo_black.png"
+              alt="Núcleo Logo"
+              className="h-8 lg:h-10 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}
