@@ -6,11 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Map } from "@/components/ui/map";
 import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Home() {
-  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
-
-  const teams = [
+  // Fallback teams data in case Supabase is not available
+  const fallbackTeams = [
     {
       id: 1,
       name: "Músicos",
@@ -77,44 +77,103 @@ export default function Home() {
     }
   ];
 
+  // Team image mapping for Supabase data
+  const teamImageMap: { [key: string]: string } = {
+    'Músicos': '/img/musicos.jpg?v=1',
+    'Núcleo Kids': '/img/nucleo-kids.jpg?v=1',
+    'Acción Social': '/img/accion-social.jpg?v=1',
+    'Núcleo Teens': '/img/nucleo-teens.jpg?v=1',
+    'Unánimes': '/img/unanimes.jpg?v=1',
+    'Matrimonios': '/img/matrimonios.jpg?v=1',
+    'Logística': '/img/logistica.jpg?v=1',
+    'Evangelismo': '/img/evangelismo.jpg?v=1'
+  };
+
+  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
+  const [teams, setTeams] = useState(fallbackTeams);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [devotionals, setDevotionals] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     console.log("🔍 Home component mounted");
-    console.log("📁 Using local images from /img folder");
+    
+    const fetchData = async () => {
+      const supabase = createClient();
+      if (!supabase) {
+        console.log("⚠️ Supabase not available, using fallback data");
+        setTeams(fallbackTeams);
+        setIsLoading(false);
+        return;
+      }
 
-    // Test if we can access the images
-    const testImages = [
-      "/img/musicos.jpg?v=1",
-      "/img/nucleo-kids.jpg?v=1",
-      "/img/accion-social.jpg?v=1",
-      "/img/nucleo-teens.jpg?v=1",
-      "/img/unanimes.jpg?v=1",
-      "/img/matrimonios.jpg?v=1",
-      "/img/logistica.jpg?v=1",
-      "/img/evangelismo.jpg?v=1",
-      "/img/devocional-1.jpg?v=1",
-      "/img/devocional-2.jpg?v=1",
-      "/img/devocional-3.jpg?v=1"
-    ];
+      try {
+        // Fetch teams
+        const { data: teamsData, error: teamsError } = await supabase
+          .from('teams')
+          .select('*')
+          .order('name', { ascending: true });
 
-    testImages.forEach((imgPath, index) => {
-      const img = new window.Image();
-      img.onload = () => {
-        console.log(`✅ Image ${index + 1} loaded successfully:`, imgPath);
-        console.log(`📊 Image dimensions: ${img.width}x${img.height}`);
-      };
-      img.onerror = () => {
-        console.error(`❌ Image ${index + 1} failed to load:`, imgPath);
-      };
-      img.src = imgPath;
-    });
+        if (teamsError) {
+          console.error("❌ Error fetching teams:", teamsError);
+          setTeams(fallbackTeams);
+        } else {
+          console.log("✅ Teams fetched successfully:", teamsData);
+          // Remove duplicates based on team name
+          const uniqueTeams = teamsData ? teamsData.filter((team: any, index: number, self: any[]) => 
+            index === self.findIndex((t: any) => t.name === team.name)
+          ) : fallbackTeams;
+          console.log("🔍 Unique teams after deduplication:", uniqueTeams);
+          setTeams(uniqueTeams);
+        }
+
+        // Fetch featured announcements
+        const { data: announcementsData, error: announcementsError } = await supabase
+          .from('announcements')
+          .select('*')
+          .eq('is_featured', true)
+          .order('published_at', { ascending: false })
+          .limit(3);
+
+        if (announcementsError) {
+          console.error("❌ Error fetching announcements:", announcementsError);
+        } else {
+          console.log("✅ Announcements fetched successfully:", announcementsData);
+          setAnnouncements(announcementsData || []);
+        }
+
+        // Fetch featured devotionals
+        const { data: devotionalsData, error: devotionalsError } = await supabase
+          .from('devotionals')
+          .select('*')
+          .eq('is_featured', true)
+          .order('published_at', { ascending: false })
+          .limit(3);
+
+        if (devotionalsError) {
+          console.error("❌ Error fetching devotionals:", devotionalsError);
+        } else {
+          console.log("✅ Devotionals fetched successfully:", devotionalsData);
+          setDevotionals(devotionalsData || []);
+        }
+
+      } catch (error) {
+        console.error("❌ Unexpected error:", error);
+        setTeams(fallbackTeams);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
 
     // Auto-scroll carousel every 10 seconds
     const interval = setInterval(() => {
-      setCurrentTeamIndex((prevIndex) => (prevIndex + 1) % teams.length);
-    }, 5000);
+      setCurrentTeamIndex((prevIndex) => (prevIndex + 1) % (teams.length || fallbackTeams.length));
+    }, 10000);
 
     return () => clearInterval(interval);
-  }, [teams.length]);
+  }, []); // Remove teams.length dependency to prevent re-renders
 
   const goToTeam = (index: number) => {
     setCurrentTeamIndex(index);
@@ -221,11 +280,15 @@ export default function Home() {
               {/* Hero Section - Featured Team */}
               <div className="h-48 relative bg-slate-800">
                 <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80">
-                  <img
-                    src={teams[currentTeamIndex].image}
-                    alt={teams[currentTeamIndex].alt}
-                    className="w-full h-full object-cover opacity-40"
-                  />
+                                      <img
+                      src={teams[currentTeamIndex].image || teamImageMap[teams[currentTeamIndex].name] || '/img/musicos.jpg?v=1'}
+                      alt={teams[currentTeamIndex].alt || teams[currentTeamIndex].name}
+                      className="w-full h-full object-cover opacity-40"
+                      onError={(e) => {
+                        // Fallback to a default image if the team image fails to load
+                        e.currentTarget.src = '/img/musicos.jpg?v=1';
+                      }}
+                    />
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center text-white">
@@ -233,7 +296,7 @@ export default function Home() {
                       {teams[currentTeamIndex].name}
                     </h3>
                     <p className="text-base md:text-lg text-slate-200 font-light drop-shadow-md">
-                      {teams[currentTeamIndex].subtitle}
+                      {teams[currentTeamIndex].subtitle || 'Ministerio'}
                     </p>
                   </div>
                 </div>
@@ -243,7 +306,7 @@ export default function Home() {
               <div className="p-4 md:p-6">
                 <div className="max-w-lg mx-auto text-center">
                   <p className="text-sm md:text-base text-slate-600 mb-4 leading-relaxed">
-                    {teams[currentTeamIndex].description}
+                    {teams[currentTeamIndex].description || 'Ministerio dedicado a servir a nuestra comunidad y crecer juntos en la fe.'}
                   </p>
                   
                   <div className="flex flex-col sm:flex-row gap-2 justify-center">
@@ -259,7 +322,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Additional Teams Grid */}
+          {/* Additional Teams Grid - Show all teams */}
           <div className="grid md:grid-cols-3 gap-4 mt-8 max-w-4xl mx-auto">
             {teams.map((team, index) => (
               <div 
@@ -272,15 +335,19 @@ export default function Home() {
                 <div className="h-32 relative bg-slate-800">
                   <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80">
                     <img
-                      src={team.image}
-                      alt={team.alt}
+                      src={team.image || teamImageMap[team.name] || '/img/musicos.jpg?v=1'}
+                      alt={team.alt || team.name}
                       className="w-full h-full object-cover opacity-40"
+                      onError={(e) => {
+                        // Fallback to a default image if the team image fails to load
+                        e.currentTarget.src = '/img/musicos.jpg?v=1';
+                      }}
                     />
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center text-white">
                       <h4 className="text-base font-semibold drop-shadow-md">{team.name}</h4>
-                      <p className="text-xs text-slate-200 drop-shadow-sm">{team.subtitle}</p>
+                      <p className="text-xs text-slate-200 drop-shadow-sm">{team.subtitle || 'Ministerio'}</p>
                     </div>
                   </div>
                 </div>
@@ -347,17 +414,27 @@ export default function Home() {
               </p>
               
               <div className="space-y-6 mb-8">
-                <div className="border-l-4 border-slate-200 pl-4">
-                  <h4 className="font-semibold text-slate-900 text-lg">Próximos Eventos</h4>
-                  <p className="text-slate-600 mb-2">Estudio Bíblico • 24 jul 19:00 • Aula 1</p>
-                  <p className="text-slate-600">Reunión de Jóvenes • 26 jul 18:00 • Salón de Jóvenes</p>
-                </div>
+                {announcements.length > 0 && (
+                  <div className="border-l-4 border-slate-200 pl-4">
+                    <h4 className="font-semibold text-slate-900 text-lg">Anuncios Importantes</h4>
+                    {announcements.slice(0, 2).map((announcement, index) => (
+                      <p key={index} className="text-slate-600 mb-2">
+                        {announcement.title}
+                      </p>
+                    ))}
+                  </div>
+                )}
                 
-                <div className="border-l-4 border-slate-200 pl-4">
-                  <h4 className="font-semibold text-slate-900 text-lg">Anuncios Importantes</h4>
-                  <p className="text-slate-600 mb-2">Retiro de Jóvenes - Inscripciones abiertas</p>
-                  <p className="text-slate-600">Nuevo Horario de Servicios: 10:00 AM y 6:00 PM</p>
-                </div>
+                {devotionals.length > 0 && (
+                  <div className="border-l-4 border-slate-200 pl-4">
+                    <h4 className="font-semibold text-slate-900 text-lg">Devocionales Destacados</h4>
+                    {devotionals.slice(0, 2).map((devotional, index) => (
+                      <p key={index} className="text-slate-600 mb-2">
+                        {devotional.title}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
@@ -401,74 +478,98 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Devocional 1 */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-              <div className="h-48 relative bg-slate-800">
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80">
-                  <img
-                    src="/img/devocional-1.jpg?v=1"
-                    alt="Paz y tranquilidad espiritual"
-                    className="w-full h-full object-cover opacity-40"
-                  />
+            {devotionals.length > 0 ? (
+              devotionals.slice(0, 3).map((devotional, index) => (
+                <div key={devotional.id || index} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                  <div className="h-48 relative bg-slate-800">
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80">
+                      <img
+                        src={`/img/devocional-${index + 1}.jpg?v=1`}
+                        alt={devotional.title}
+                        className="w-full h-full object-cover opacity-40"
+                      />
+                    </div>
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <h4 className="text-xl font-semibold drop-shadow-lg">{devotional.title}</h4>
+                      <p className="text-sm text-slate-200 drop-shadow-md">
+                        {devotional.author && `${devotional.author}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <p className="text-slate-600 leading-relaxed">
+                      {devotional.content}
+                    </p>
+                  </div>
                 </div>
-                <div className="absolute bottom-4 left-4 text-white">
-                  <h4 className="text-xl font-semibold drop-shadow-lg">La Paz de Dios</h4>
-                  <p className="text-sm text-slate-200 drop-shadow-md">21/7/2025 • Pastor Miguel</p>
+              ))
+            ) : (
+              // Fallback content when no devotionals are available
+              <>
+                <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                  <div className="h-48 relative bg-slate-800">
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80">
+                      <img
+                        src="/img/devocional-1.jpg?v=1"
+                        alt="Paz y tranquilidad espiritual"
+                        className="w-full h-full object-cover opacity-40"
+                      />
+                    </div>
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <h4 className="text-xl font-semibold drop-shadow-lg">La Paz de Dios</h4>
+                      <p className="text-sm text-slate-200 drop-shadow-md">Pastor Miguel</p>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <p className="text-slate-600 leading-relaxed">
+                      En medio de las tormentas de la vida, Dios nos ofrece su paz que sobrepasa todo entendimiento.
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="p-6">
-                <p className="text-slate-600 leading-relaxed">
-                  En medio de las tormentas de la vida, Dios nos ofrece su paz que sobrepasa todo entendimiento.
-                  Esta paz no depende de nuestras circunstancias, sino de nuestra relación con Él.
-                </p>
-              </div>
-            </div>
 
-            {/* Devocional 2 */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-              <div className="h-48 relative bg-slate-800">
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80">
-                  <img
-                    src="/img/devocional-2.jpg?v=1"
-                    alt="Confianza y fe en Dios"
-                    className="w-full h-full object-cover opacity-40"
-                  />
+                <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                  <div className="h-48 relative bg-slate-800">
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80">
+                      <img
+                        src="/img/devocional-2.jpg?v=1"
+                        alt="Confianza y fe en Dios"
+                        className="w-full h-full object-cover opacity-40"
+                      />
+                    </div>
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <h4 className="text-xl font-semibold drop-shadow-lg">Confianza en Dios</h4>
+                      <p className="text-sm text-slate-200 drop-shadow-md">Pastor Miguel</p>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <p className="text-slate-600 leading-relaxed">
+                      Cuando enfrentamos desafíos, podemos confiar en que Dios tiene el control.
+                    </p>
+                  </div>
                 </div>
-                <div className="absolute bottom-4 left-4 text-white">
-                  <h4 className="text-xl font-semibold drop-shadow-lg">Confianza en Dios</h4>
-                  <p className="text-sm text-slate-200 drop-shadow-md">20/7/2025 • Pastor Miguel</p>
-                </div>
-              </div>
-              <div className="p-6">
-                <p className="text-slate-600 leading-relaxed">
-                  Cuando enfrentamos desafíos, podemos confiar en que Dios tiene el control.
-                  Él conoce nuestras necesidades y proveerá según su perfecta voluntad.
-                </p>
-              </div>
-            </div>
 
-            {/* Devocional 3 */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-              <div className="h-48 relative bg-slate-800">
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80">
-                  <img
-                    src="/img/devocional-3.jpg?v=1"
-                    alt="Amor incondicional de Cristo"
-                    className="w-full h-full object-cover opacity-40"
-                  />
+                <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                  <div className="h-48 relative bg-slate-800">
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80">
+                      <img
+                        src="/img/devocional-3.jpg?v=1"
+                        alt="Amor incondicional de Cristo"
+                        className="w-full h-full object-cover opacity-40"
+                      />
+                    </div>
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <h4 className="text-xl font-semibold drop-shadow-lg">El Amor de Cristo</h4>
+                      <p className="text-sm text-slate-200 drop-shadow-md">Pastor Miguel</p>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <p className="text-slate-600 leading-relaxed">
+                      El amor de Cristo es incondicional y transformador. Nos acepta tal como somos.
+                    </p>
+                  </div>
                 </div>
-                <div className="absolute bottom-4 left-4 text-white">
-                  <h4 className="text-xl font-semibold drop-shadow-lg">El Amor de Cristo</h4>
-                  <p className="text-sm text-slate-200 drop-shadow-md">19/7/2025 • Pastor Miguel</p>
-                </div>
-              </div>
-              <div className="p-6">
-                <p className="text-slate-600 leading-relaxed">
-                  El amor de Cristo por nosotros es incondicional y eterno. No hay nada que podamos hacer para ganarlo,
-                  y nada que podamos hacer para perderlo.
-                </p>
-              </div>
-            </div>
+              </>
+            )}
           </div>
 
           <div className="text-center mt-12">
