@@ -11,13 +11,20 @@ export default function QuienesSomosPage() {
   return (
     <div className="min-h-screen bg-slate-50 pt-16 lg:pt-20">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-slate-900 to-slate-800 text-white py-20 lg:py-32">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-6 tracking-tight">
+      <section className="relative py-24 lg:py-32 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80">
+          <img
+            src="/img/quienes-somos-hero.jpg"
+            alt="Nuestra comunidad de fe"
+            className="w-full h-full object-cover opacity-40"
+          />
+        </div>
+        <div className="container mx-auto px-4 relative z-10 text-center">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-6 tracking-tight drop-shadow-lg">
               Quiénes Somos
             </h1>
-            <p className="text-xl md:text-2xl text-slate-300 leading-relaxed font-light">
+            <p className="text-xl md:text-2xl text-slate-200 leading-relaxed font-light drop-shadow-md">
               Una comunidad de fe comprometida con el amor de Cristo y el servicio a los demás.
             </p>
           </div>

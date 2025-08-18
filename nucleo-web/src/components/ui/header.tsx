@@ -13,6 +13,7 @@ export function Header() {
     { name: "Quiénes Somos", href: "/quienes-somos" },
     { name: "Anuncios", href: "/anuncios" },
     { name: "Eventos", href: "/eventos" },
+    { name: "Devocionales", href: "/devocionales" },
     { name: "Equipos", href: "/equipos" },
     { name: "Contacto", href: "/contacto" },
   ]

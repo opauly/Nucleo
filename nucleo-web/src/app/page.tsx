@@ -146,7 +146,6 @@ export default function Home() {
         const { data: devotionalsData, error: devotionalsError } = await supabase
           .from('devotionals')
           .select('*')
-          .eq('is_featured', true)
           .order('published_at', { ascending: false })
           .limit(3);
 
@@ -154,6 +153,7 @@ export default function Home() {
           console.error("❌ Error fetching devotionals:", devotionalsError);
         } else {
           console.log("✅ Devotionals fetched successfully:", devotionalsData);
+          console.log("📊 Number of devotionals:", devotionalsData?.length || 0);
           setDevotionals(devotionalsData || []);
         }
 
@@ -573,9 +573,11 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-12">
-            <Button variant="outline" className="border-slate-200 text-slate-700 hover:bg-slate-50 px-8 py-3">
-              Ver Todos los Devocionales
-            </Button>
+            <a href="/devocionales">
+              <Button variant="outline" className="border-slate-200 text-slate-700 hover:bg-slate-50 px-8 py-3">
+                Ver Todos los Devocionales
+              </Button>
+            </a>
           </div>
         </div>
       </section>
