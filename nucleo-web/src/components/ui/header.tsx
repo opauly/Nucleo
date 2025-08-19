@@ -3,10 +3,12 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X } from "lucide-react"
+import { Menu, X, User, LogOut } from "lucide-react"
+import { useAuth } from "@/lib/auth/auth-context"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { user, signOut } = useAuth()
 
   const navigation = [
     { name: "Inicio", href: "/" },
@@ -46,12 +48,29 @@ export function Header() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden lg:flex items-center space-x-4">
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/iniciar-sesion">Iniciar Sesión</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link href="/registro">Registrarse</Link>
-            </Button>
+            {user ? (
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/perfil">
+                    <User className="w-4 h-4 mr-2" />
+                    Perfil
+                  </Link>
+                </Button>
+                <Button size="sm" onClick={signOut} className="bg-red-600 hover:bg-red-700">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Cerrar Sesión
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/iniciar-sesion">Iniciar Sesión</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/registro">Registrarse</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -84,16 +103,36 @@ export function Header() {
               ))}
             </nav>
             <div className="px-4 py-4 border-t border-slate-200 space-y-3">
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/iniciar-sesion" onClick={() => setIsMenuOpen(false)}>
-                  Iniciar Sesión
-                </Link>
-              </Button>
-              <Button className="w-full" asChild>
-                <Link href="/registro" onClick={() => setIsMenuOpen(false)}>
-                  Registrarse
-                </Link>
-              </Button>
+              {user ? (
+                <>
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href="/perfil" onClick={() => setIsMenuOpen(false)}>
+                      <User className="w-4 h-4 mr-2" />
+                      Perfil
+                    </Link>
+                  </Button>
+                  <Button className="w-full bg-red-600 hover:bg-red-700" onClick={() => {
+                    signOut()
+                    setIsMenuOpen(false)
+                  }}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Cerrar Sesión
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href="/iniciar-sesion" onClick={() => setIsMenuOpen(false)}>
+                      Iniciar Sesión
+                    </Link>
+                  </Button>
+                  <Button className="w-full" asChild>
+                    <Link href="/registro" onClick={() => setIsMenuOpen(false)}>
+                      Registrarse
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}

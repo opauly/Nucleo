@@ -40,7 +40,7 @@ export default async function EquiposPage() {
         </div>
         <div className="container mx-auto px-4 relative z-10 text-center">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-6 tracking-tight drop-shadow-lg">
+            <h1 className="text-5xl md:text-6xl lg:text-6xl font-display font-bold text-white mb-6 tracking-tight drop-shadow-lg">
               Nuestros Equipos
             </h1>
             <p className="text-xl md:text-2xl text-slate-200 leading-relaxed font-light drop-shadow-md">

@@ -12,6 +12,9 @@ Please add the following images to this folder (`/public/img/`):
 - `equipos-hero.jpg` - Teams page hero (ministry teams and service)
 - `contacto-hero.jpg` - Contact page hero (communication and connection)
 - `devocional-hero.jpg` - Devotionals page hero (spiritual reflections)
+- `registro-hero.jpg` - Registration page hero (user registration)
+- `login-hero.jpg` - Login page hero (user authentication)
+- `perfil-hero.jpg` - Profile page hero (user profile management)
 
 ## Mission Section  
 - `mision.jpg` - Mission section image (group of smiling young people)

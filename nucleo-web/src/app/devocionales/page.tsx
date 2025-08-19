@@ -31,10 +31,10 @@ export default async function DevocionalesPage() {
         </div>
         <div className="container mx-auto px-4 relative z-10 text-center">
           <div className="max-w-3xl mx-auto">
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold text-white mb-6 leading-tight tracking-tight drop-shadow-lg">
+            <h1 className="text-5xl md:text-6xl lg:text-6xl font-display font-bold text-white mb-6 tracking-tight drop-shadow-lg">
               Devocionales
             </h1>
-            <p className="text-xl md:text-2xl text-slate-200 mb-10 leading-relaxed font-light drop-shadow-md">
+            <p className="text-xl md:text-2xl text-slate-200 leading-relaxed font-light drop-shadow-md">
               Reflexiones diarias para nutrir tu fe y fortalecer tu relación con Dios
             </p>
           </div>

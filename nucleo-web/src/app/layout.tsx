@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
+import { AuthProvider } from "@/lib/auth/auth-context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -44,10 +45,12 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} ${poppins.variable}`}>
       <body className="antialiased bg-background text-foreground">
-        <Header />
-        {children}
-        <Footer />
-        <Toaster />
+        <AuthProvider>
+          <Header />
+          {children}
+          <Footer />
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

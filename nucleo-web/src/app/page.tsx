@@ -208,10 +208,10 @@ export default function Home() {
         
         <div className="container mx-auto px-4 text-center relative z-10">
           <div className="max-w-5xl mx-auto">
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold text-white mb-6 tracking-tight drop-shadow-lg">
+            <h1 className="text-5xl md:text-6xl lg:text-6xl font-display font-bold text-white mb-6 tracking-tight drop-shadow-lg">
               Núcleo
             </h1>
-            <p className="text-xl md:text-2xl lg:text-3xl text-slate-200 mb-12 font-light drop-shadow-md">
+            <p className="text-xl md:text-2xl text-slate-200 leading-relaxed font-light drop-shadow-md">
               Hacemos vida juntos
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { testSupabaseConnection } from '@/lib/supabase/test-connection'
 import { seedDatabase } from '@/lib/supabase/seed-data'
 import { inspectTableStructure } from '@/lib/supabase/inspect-tables'
+import { inspectLocationTables } from '@/lib/supabase/inspect-location-tables'
 import { Button } from '@/components/ui/button'
 
 export default function TestSupabasePage() {
@@ -11,6 +12,8 @@ export default function TestSupabasePage() {
   const [seedingStatus, setSeedingStatus] = useState<string>('')
   const [inspectionStatus, setInspectionStatus] = useState<string>('')
   const [cleanupStatus, setCleanupStatus] = useState<string>('')
+  const [locationInspectionStatus, setLocationInspectionStatus] = useState<string>('')
+  const [locationSeedingStatus, setLocationSeedingStatus] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -58,15 +61,51 @@ export default function TestSupabasePage() {
     setIsLoading(false)
   }
 
-  const handleInspectTables = async () => {
-    setIsLoading(true)
-    setInspectionStatus('Inspecting table structure...')
-    
-    await inspectTableStructure()
-    setInspectionStatus('✅ Check browser console for table structure!')
-    
-    setIsLoading(false)
-  }
+                const handleInspectTables = async () => {
+                setIsLoading(true)
+                setInspectionStatus('Inspecting table structure...')
+
+                await inspectTableStructure()
+                setInspectionStatus('✅ Check browser console for table structure!')
+
+                setIsLoading(false)
+              }
+
+              const handleInspectLocationTables = async () => {
+                setIsLoading(true)
+                setLocationInspectionStatus('Inspecting location tables...')
+
+                await inspectLocationTables()
+                setLocationInspectionStatus('✅ Check browser console for location tables!')
+
+                setIsLoading(false)
+              }
+
+              const handleSeedLocationData = async () => {
+                setIsLoading(true)
+                setLocationSeedingStatus('Seeding location data from Excel file...')
+
+                try {
+                  const response = await fetch('/api/seed-locations', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    }
+                  })
+
+                  const result = await response.json()
+
+                  if (response.ok) {
+                    setLocationSeedingStatus(`✅ Location data seeded successfully! ${result.stats.provincias} provincias, ${result.stats.cantones} cantones, ${result.stats.distritos} distritos`)
+                  } else {
+                    setLocationSeedingStatus(`❌ Seeding failed: ${result.error}`)
+                  }
+                } catch (error: any) {
+                  setLocationSeedingStatus(`❌ Seeding failed: ${error.message}`)
+                }
+
+                setIsLoading(false)
+              }
 
   const handleCleanDatabase = async () => {
     setIsLoading(true)
@@ -119,26 +158,68 @@ export default function TestSupabasePage() {
               </Button>
             </div>
 
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900 mb-4">
-                Table Structure Inspection
-              </h2>
-              <p className="text-slate-600 mb-4">
-                Check the actual structure of your database tables.
-              </p>
-              <Button 
-                onClick={handleInspectTables}
-                disabled={isLoading}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                Inspect Tables
-              </Button>
-              {inspectionStatus && (
-                <p className="mt-2 text-sm">
-                  {inspectionStatus}
-                </p>
-              )}
-            </div>
+                                    <div>
+                          <h2 className="text-xl font-semibold text-slate-900 mb-4">
+                            Table Structure Inspection
+                          </h2>
+                          <p className="text-slate-600 mb-4">
+                            Check the actual structure of your database tables.
+                          </p>
+                          <Button
+                            onClick={handleInspectTables}
+                            disabled={isLoading}
+                            className="bg-purple-600 hover:bg-purple-700"
+                          >
+                            Inspect Tables
+                          </Button>
+                          {inspectionStatus && (
+                            <p className="mt-2 text-sm">
+                              {inspectionStatus}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <h2 className="text-xl font-semibold text-slate-900 mb-4">
+                            Location Tables Inspection
+                          </h2>
+                          <p className="text-slate-600 mb-4">
+                            Check the structure and relationships of location tables (provincias, cantones, distritos).
+                          </p>
+                          <Button
+                            onClick={handleInspectLocationTables}
+                            disabled={isLoading}
+                            className="bg-indigo-600 hover:bg-indigo-700"
+                          >
+                            Inspect Location Tables
+                          </Button>
+                          {locationInspectionStatus && (
+                            <p className="mt-2 text-sm">
+                              {locationInspectionStatus}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <h2 className="text-xl font-semibold text-slate-900 mb-4">
+                            Seed Location Data
+                          </h2>
+                          <p className="text-slate-600 mb-4">
+                            Seed location data from the Excel file into the database tables.
+                          </p>
+                          <Button
+                            onClick={handleSeedLocationData}
+                            disabled={isLoading}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Seed Location Data
+                          </Button>
+                          {locationSeedingStatus && (
+                            <p className="mt-2 text-sm">
+                              {locationSeedingStatus}
+                            </p>
+                          )}
+                        </div>
 
             <div>
               <h2 className="text-xl font-semibold text-slate-900 mb-4">
