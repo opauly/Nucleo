@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Users, ArrowRight } from 'lucide-react'
+import { TeamJoinButton } from '@/components/ui/team-join-button'
 
 export const metadata = {
   title: 'Nuestros Equipos - Núcleo',
@@ -89,13 +90,10 @@ export default async function EquiposPage() {
                       <p className="text-slate-600 leading-relaxed mb-6">
                         {team.description}
                       </p>
-                      <Button 
-                        variant="outline" 
-                        className="w-full border-slate-300 text-slate-700 hover:bg-slate-50"
-                      >
-                        <span>Conocer más</span>
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
+                      <TeamJoinButton
+                        teamId={team.id}
+                        teamName={team.name}
+                      />
                     </CardContent>
                   </Card>
                 ))}

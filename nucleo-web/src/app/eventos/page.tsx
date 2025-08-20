@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar, Clock, MapPin, Users } from 'lucide-react'
+import { EventRegistrationButton } from '@/components/ui/event-registration-button'
 
 export const metadata = {
   title: 'Eventos - Núcleo',
@@ -152,9 +153,11 @@ export default async function EventosPage() {
                     </div>
                     {isUpcoming(event.start_date) && (
                       <div className="flex gap-4">
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                          Registrarse
-                        </Button>
+                        <EventRegistrationButton
+                          eventId={event.id}
+                          eventTitle={event.title}
+                          isUpcoming={isUpcoming(event.start_date)}
+                        />
                         <Button variant="outline" className="border-slate-300 text-slate-700">
                           Más Información
                         </Button>

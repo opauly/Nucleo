@@ -36,8 +36,6 @@ export async function POST() {
     for (const table of tablesToClean) {
       console.log(`🗑️ Cleaning ${table}...`)
       
-      let error;
-      
       // For all tables, use a condition that will match all rows
       // We'll use a condition that's always true: team_id is not null (for team_members) or created_at is not null (for others)
       const condition = table === 'team_members' ? 'team_id' : 'created_at';
@@ -45,12 +43,11 @@ export async function POST() {
         .from(table)
         .delete()
         .not(condition, 'is', null) // This will match all rows since these columns are never null
-      error = deleteError;
 
-      if (error) {
-        console.error(`❌ Error cleaning ${table}:`, error.message)
+      if (deleteError) {
+        console.error(`❌ Error cleaning ${table}:`, deleteError.message)
         return NextResponse.json(
-          { error: `Failed to clean ${table}: ${error.message}` },
+          { error: `Failed to clean ${table}: ${deleteError.message}` },
           { status: 500 }
         )
       }

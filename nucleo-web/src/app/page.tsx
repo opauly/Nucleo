@@ -212,7 +212,7 @@ export default function Home() {
               Núcleo
             </h1>
             <p className="text-xl md:text-2xl text-slate-200 leading-relaxed font-light drop-shadow-md">
-              Hacemos vida juntos
+              Hacemos vida juntos.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="bg-white hover:bg-slate-100 text-slate-900 px-8 py-3 text-lg font-medium shadow-lg hover:shadow-xl">

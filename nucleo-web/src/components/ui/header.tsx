@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X, User, LogOut } from "lucide-react"
+import { Menu, X, User, LogOut, Users, Calendar, Settings } from "lucide-react"
 import { useAuth } from "@/lib/auth/auth-context"
 
 export function Header() {
@@ -46,32 +46,38 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Desktop Auth Buttons */}
-          <div className="hidden lg:flex items-center space-x-4">
-            {user ? (
-              <>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/perfil">
-                    <User className="w-4 h-4 mr-2" />
-                    Perfil
-                  </Link>
-                </Button>
-                <Button size="sm" onClick={signOut} className="bg-red-600 hover:bg-red-700">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Cerrar Sesión
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/iniciar-sesion">Iniciar Sesión</Link>
-                </Button>
-                <Button size="sm" asChild>
-                  <Link href="/registro">Registrarse</Link>
-                </Button>
-              </>
-            )}
-          </div>
+                            {/* Desktop Auth Buttons */}
+                  <div className="hidden lg:flex items-center space-x-4">
+                    {user ? (
+                      <>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href="/perfil">
+                            <User className="w-4 h-4 mr-2" />
+                            Perfil
+                          </Link>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href="/admin">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Admin
+                          </Link>
+                        </Button>
+                        <Button size="sm" onClick={signOut} className="bg-red-600 hover:bg-red-700">
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Cerrar Sesión
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href="/iniciar-sesion">Iniciar Sesión</Link>
+                        </Button>
+                        <Button size="sm" asChild>
+                          <Link href="/registro">Registrarse</Link>
+                        </Button>
+                      </>
+                    )}
+                  </div>
 
           {/* Mobile Menu Button */}
           <button
