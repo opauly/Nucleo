@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -91,6 +92,7 @@ export default function Home() {
 
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
   const [teams, setTeams] = useState(fallbackTeams);
+  const [events, setEvents] = useState<any[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [devotionals, setDevotionals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -127,11 +129,35 @@ export default function Home() {
           setTeams(uniqueTeams);
         }
 
-        // Fetch featured announcements
+        // Fetch featured published events (upcoming) - with fallback
+        try {
+          const { data: eventsData, error: eventsError } = await supabase
+            .from('events')
+            .select('*')
+            .eq('status', 'published') // Only published events
+            .eq('is_featured', true) // Only featured events
+            .gte('start_date', new Date().toISOString()) // Only upcoming events
+            .order('start_date', { ascending: true })
+            .limit(3);
+
+          if (eventsError) {
+            console.error("❌ Error fetching events:", eventsError);
+            setEvents([]); // Set empty array on error
+          } else {
+            console.log("✅ Events fetched successfully:", eventsData);
+            setEvents(eventsData || []);
+          }
+        } catch (error) {
+          console.error("❌ Events table might not exist:", error);
+          setEvents([]); // Set empty array if table doesn't exist
+        }
+
+        // Fetch featured announcements (only published)
         const { data: announcementsData, error: announcementsError } = await supabase
           .from('announcements')
           .select('*')
           .eq('is_featured', true)
+          .not('published_at', 'is', null) // Only show published announcements
           .order('published_at', { ascending: false })
           .limit(3);
 
@@ -142,10 +168,12 @@ export default function Home() {
           setAnnouncements(announcementsData || []);
         }
 
-        // Fetch featured devotionals
+        // Fetch featured devotionals (only published)
         const { data: devotionalsData, error: devotionalsError } = await supabase
           .from('devotionals')
           .select('*')
+          .eq('is_featured', true) // Only show featured devotionals
+          .not('published_at', 'is', null) // Only show published devotionals
           .order('published_at', { ascending: false })
           .limit(3);
 
@@ -413,37 +441,84 @@ export default function Home() {
                 Explora nuestros eventos y anuncios para mantenerte conectado con nuestra comunidad de fe.
               </p>
               
-              <div className="space-y-6 mb-8">
-                {announcements.length > 0 && (
-                  <div className="border-l-4 border-slate-200 pl-4">
-                    <h4 className="font-semibold text-slate-900 text-lg">Anuncios Importantes</h4>
-                    {announcements.slice(0, 2).map((announcement, index) => (
-                      <p key={index} className="text-slate-600 mb-2">
-                        {announcement.title}
+              <div className="space-y-8 mb-8">
+                {/* Featured Events */}
+                <div className="border-l-4 border-blue-500 pl-4">
+                  <h4 className="font-semibold text-slate-900 text-lg mb-3">Eventos Destacados</h4>
+                  {events.length > 0 ? (
+                    <div className="space-y-3">
+                      {events.slice(0, 3).map((event, index) => (
+                        <div key={event.id || index} className="bg-slate-50 rounded-lg p-3">
+                          <h5 className="font-medium text-slate-900 text-sm mb-1 line-clamp-1">
+                            {event.title}
+                          </h5>
+                          <p className="text-slate-600 text-xs mb-1 line-clamp-2">
+                            {event.description || 'Evento de la comunidad'}
+                          </p>
+                          <p className="text-slate-500 text-xs">
+                            {new Date(event.start_date).toLocaleDateString('es-ES', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-slate-600 text-sm">
+                        No hay eventos destacados en este momento.
                       </p>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
                 
-                {devotionals.length > 0 && (
-                  <div className="border-l-4 border-slate-200 pl-4">
-                    <h4 className="font-semibold text-slate-900 text-lg">Devocionales Destacados</h4>
-                    {devotionals.slice(0, 2).map((devotional, index) => (
-                      <p key={index} className="text-slate-600 mb-2">
-                        {devotional.title}
+                {/* Featured Announcements */}
+                <div className="border-l-4 border-green-500 pl-4">
+                  <h4 className="font-semibold text-slate-900 text-lg mb-3">Anuncios Importantes</h4>
+                  {announcements.length > 0 ? (
+                    <div className="space-y-3">
+                      {announcements.slice(0, 3).map((announcement, index) => (
+                        <div key={announcement.id || index} className="bg-slate-50 rounded-lg p-3">
+                          <h5 className="font-medium text-slate-900 text-sm mb-1 line-clamp-1">
+                            {announcement.title}
+                          </h5>
+                          <p className="text-slate-600 text-xs mb-1 line-clamp-2">
+                            {announcement.summary || 'Anuncio importante de la comunidad'}
+                          </p>
+                          <p className="text-slate-500 text-xs">
+                            {new Date(announcement.published_at).toLocaleDateString('es-ES', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-slate-600 text-sm">
+                        No hay anuncios destacados en este momento.
                       </p>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white px-8 py-3 text-lg font-medium shadow-lg hover:shadow-xl">
-                  Eventos
-                </Button>
-                <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white px-8 py-3 text-lg font-medium shadow-lg hover:shadow-xl">
-                  Anuncios
-                </Button>
+                <Link href="/eventos">
+                  <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white px-8 py-3 text-lg font-medium shadow-lg hover:shadow-xl">
+                    Ver Todos los Eventos
+                  </Button>
+                </Link>
+                <Link href="/anuncios">
+                  <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white px-8 py-3 text-lg font-medium shadow-lg hover:shadow-xl">
+                    Ver Todos los Anuncios
+                  </Button>
+                </Link>
               </div>
             </div>
 
@@ -492,13 +567,13 @@ export default function Home() {
                     <div className="absolute bottom-4 left-4 text-white">
                       <h4 className="text-xl font-semibold drop-shadow-lg">{devotional.title}</h4>
                       <p className="text-sm text-slate-200 drop-shadow-md">
-                        {devotional.author && `${devotional.author}`}
+                        {devotional.author || 'Pastor Miguel'}
                       </p>
                     </div>
                   </div>
                   <div className="p-6">
-                    <p className="text-slate-600 leading-relaxed">
-                      {devotional.content}
+                    <p className="text-slate-600 leading-relaxed line-clamp-3">
+                      {devotional.summary || 'Reflexión espiritual para fortalecer tu fe y caminar con Dios.'}
                     </p>
                   </div>
                 </div>

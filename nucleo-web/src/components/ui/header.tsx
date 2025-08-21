@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth/auth-context"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { user, signOut } = useAuth()
+  const { user, loading, signOut } = useAuth()
 
   const navigation = [
     { name: "Inicio", href: "/" },
@@ -48,7 +48,12 @@ export function Header() {
 
                             {/* Desktop Auth Buttons */}
                   <div className="hidden lg:flex items-center space-x-4">
-                    {user ? (
+                    {loading ? (
+                      <div className="flex items-center space-x-4">
+                        <div className="animate-pulse bg-slate-200 h-8 w-20 rounded"></div>
+                        <div className="animate-pulse bg-slate-200 h-8 w-24 rounded"></div>
+                      </div>
+                    ) : user ? (
                       <>
                         <Button variant="outline" size="sm" asChild>
                           <Link href="/perfil">
@@ -109,7 +114,12 @@ export function Header() {
               ))}
             </nav>
             <div className="px-4 py-4 border-t border-slate-200 space-y-3">
-              {user ? (
+              {loading ? (
+                <div className="space-y-3">
+                  <div className="animate-pulse bg-slate-200 h-10 w-full rounded"></div>
+                  <div className="animate-pulse bg-slate-200 h-10 w-full rounded"></div>
+                </div>
+              ) : user ? (
                 <>
                   <Button variant="outline" className="w-full" asChild>
                     <Link href="/perfil" onClick={() => setIsMenuOpen(false)}>

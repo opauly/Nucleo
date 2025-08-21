@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Calendar, Clock } from 'lucide-react'
+import Link from 'next/link'
 
 export const metadata = {
   title: 'Anuncios - Núcleo',
@@ -18,6 +20,7 @@ export default async function AnunciosPage() {
     const { data, error: fetchError } = await supabase
       .from('announcements')
       .select('*')
+      .not('published_at', 'is', null) // Only show published announcements
       .order('published_at', { ascending: false })
 
     if (fetchError) {
@@ -71,49 +74,67 @@ export default async function AnunciosPage() {
               </div>
             </div>
           ) : (
-            <div className="max-w-4xl mx-auto space-y-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {announcements.map((announcement) => (
-                <Card key={announcement.id} className="shadow-lg hover:shadow-xl transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-2xl lg:text-3xl text-slate-900 mb-2">
-                          {announcement.title}
-                        </CardTitle>
-                        <div className="flex items-center gap-4 text-slate-600">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            <span className="text-sm">
-                              {new Date(announcement.published_at).toLocaleDateString('es-ES', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              })}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4" />
-                            <span className="text-sm">
-                              {new Date(announcement.published_at).toLocaleTimeString('es-ES', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                <Card key={announcement.id} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                  {/* Featured Image */}
+                  {announcement.image_url && (
+                    <div className="h-48 relative bg-slate-800">
+                      <img
+                        src={announcement.image_url}
+                        alt={announcement.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
                       {announcement.is_featured && (
-                        <Badge className="bg-blue-600 text-white">
-                          Destacado
-                        </Badge>
+                        <div className="absolute top-4 right-4">
+                          <Badge className="bg-blue-600 text-white">
+                            Destacado
+                          </Badge>
+                        </div>
                       )}
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="prose prose-slate max-w-none">
-                      <p className="text-lg text-slate-700 leading-relaxed">
-                        {announcement.content}
+                  )}
+
+                  {/* Card Content */}
+                  <CardContent className="p-6">
+                    <div className="mb-4">
+                      <h3 className="text-xl font-bold text-slate-900 mb-3 line-clamp-2">
+                        {announcement.title}
+                      </h3>
+                      <p className="text-slate-600 leading-relaxed text-sm line-clamp-3">
+                        {announcement.summary || 'Mantente informado sobre las últimas noticias de nuestra comunidad.'}
                       </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-xs text-slate-500 mb-4">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>
+                          {new Date(announcement.published_at).toLocaleDateString('es-ES', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>
+                          {new Date(announcement.published_at).toLocaleTimeString('es-ES', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end">
+                      <Link href={`/anuncios/${announcement.id}`}>
+                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                          Leer Más
+                        </Button>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>

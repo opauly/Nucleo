@@ -23,16 +23,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!supabase) {
+      console.warn('Supabase client not available, setting loading to false')
       setLoading(false)
       return
     }
 
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        setSession(session)
+        setUser(session?.user ?? null)
+      } catch (error) {
+        console.error('Error getting initial session:', error)
+        setSession(null)
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
 
     getInitialSession()
@@ -40,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email)
         setSession(session)
         setUser(session?.user ?? null)
         setLoading(false)
@@ -51,7 +60,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     if (supabase) {
-      await supabase.auth.signOut()
+      try {
+        await supabase.auth.signOut()
+        console.log('User signed out successfully')
+      } catch (error) {
+        console.error('Error signing out:', error)
+      }
     }
   }
 

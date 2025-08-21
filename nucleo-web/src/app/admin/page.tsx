@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Calendar, Check, X, Clock, Users, BarChart3 } from 'lucide-react'
+import { Calendar, Check, X, Clock, Users, BarChart3, FileText, Plus, Trash2 } from 'lucide-react'
 
 interface UserProfile {
   id: string
@@ -54,14 +55,36 @@ interface TeamMembership {
   teams: Team
 }
 
+interface ContentItem {
+  id: string
+  title: string
+  content?: string
+  description?: string
+  author?: string
+  status?: string
+  published_at?: string
+  is_featured?: boolean
+  created_at: string
+  updated_at: string
+  scripture_reference?: string
+  start_date?: string
+  end_date?: string
+  location?: string
+  max_participants?: number
+}
+
 export default function AdminDashboardPage() {
   const { user } = useAuth()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'teams'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'teams' | 'content'>('overview')
   const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([])
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
+  const [announcements, setAnnouncements] = useState<ContentItem[]>([])
+  const [devotionals, setDevotionals] = useState<ContentItem[]>([])
+  const [events, setEvents] = useState<ContentItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
+  const [contentType, setContentType] = useState<'announcements' | 'devotionals' | 'events'>('announcements')
 
   useEffect(() => {
     if (!user) {
@@ -75,20 +98,38 @@ export default function AdminDashboardPage() {
   const fetchData = async () => {
     setIsLoading(true)
     try {
-      // Fetch both event registrations and team memberships
-      const [eventsResponse, teamsResponse] = await Promise.all([
+      // Fetch all data
+      const [eventRegistrationsResponse, teamsResponse, announcementsResponse, devotionalsResponse, eventsResponse] = await Promise.all([
         fetch('/api/admin/event-registrations'),
-        fetch('/api/admin/team-memberships')
+        fetch('/api/admin/team-memberships'),
+        fetch('/api/admin/announcements'),
+        fetch('/api/admin/devotionals'),
+        fetch('/api/admin/events')
       ])
+
+      if (eventRegistrationsResponse.ok) {
+        const eventRegistrationsResult = await eventRegistrationsResponse.json()
+        setEventRegistrations(eventRegistrationsResult.registrations || [])
+      }
 
       if (eventsResponse.ok) {
         const eventsResult = await eventsResponse.json()
-        setEventRegistrations(eventsResult.registrations || [])
+        setEvents(eventsResult.events || [])
       }
 
       if (teamsResponse.ok) {
         const teamsResult = await teamsResponse.json()
         setTeamMemberships(teamsResult.memberships || [])
+      }
+
+      if (announcementsResponse.ok) {
+        const announcementsResult = await announcementsResponse.json()
+        setAnnouncements(announcementsResult.announcements || [])
+      }
+
+      if (devotionalsResponse.ok) {
+        const devotionalsResult = await devotionalsResponse.json()
+        setDevotionals(devotionalsResult.devotionals || [])
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -196,8 +237,43 @@ export default function AdminDashboardPage() {
     return fullName.trim()
   }
 
+  const handleDeleteContent = async (contentId: string, contentType: 'announcements' | 'devotionals' | 'events') => {
+    if (!user) return
+
+    const contentName = contentType === 'announcements' ? 'anuncio' : contentType === 'devotionals' ? 'devocional' : 'evento'
+    const contentTitle = (contentType === 'announcements' ? announcements : contentType === 'devotionals' ? devotionals : events).find(item => item.id === contentId)?.title || 'este contenido'
+    
+    if (!confirm(`¿Estás seguro de que quieres eliminar "${contentTitle}"?\n\nEsta acción no se puede deshacer y el contenido se perderá permanentemente.`)) {
+      return
+    }
+
+    setProcessingId(contentId)
+
+    try {
+      const response = await fetch(`/api/admin/${contentType === 'events' ? 'events' : contentType}/${contentId}`, {
+        method: 'DELETE'
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        toast.success(`${contentName.charAt(0).toUpperCase() + contentName.slice(1)} eliminado exitosamente`)
+        fetchData() // Refresh the data
+      } else {
+        toast.error(result.error || `Error al eliminar ${contentName}`)
+      }
+    } catch (error) {
+      console.error(`Error deleting ${contentType}:`, error)
+      toast.error('Error de conexión')
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
   const pendingEvents = eventRegistrations.filter(r => r.status === 'pending')
   const pendingTeams = teamMemberships.filter(m => m.status === 'pending')
+  const publishedAnnouncements = announcements.filter(a => a.status === 'published')
+  const publishedDevotionals = devotionals.filter(d => d.status === 'published')
 
   if (!user) {
     return null
@@ -253,6 +329,14 @@ export default function AdminDashboardPage() {
             >
               <Users className="w-4 h-4" />
               Equipos ({pendingTeams.length})
+            </Button>
+            <Button
+              variant={activeTab === 'content' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('content')}
+              className="flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              Contenido
             </Button>
           </div>
         </div>
@@ -505,6 +589,147 @@ export default function AdminDashboardPage() {
                       </Card>
                     ))
                   )}
+                </div>
+              )}
+
+              {/* Content Tab */}
+              {activeTab === 'content' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-semibold text-slate-900">Gestión de Contenido</h2>
+                    <div className="flex items-center gap-3">
+                      <Select value={contentType} onValueChange={(value: 'announcements' | 'devotionals' | 'events') => setContentType(value)}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="announcements">Anuncios</SelectItem>
+                          <SelectItem value="devotionals">Devocionales</SelectItem>
+                          <SelectItem value="events">Eventos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={fetchData} variant="outline" size="sm">
+                        Actualizar
+                      </Button>
+                      <Button 
+                        onClick={() => router.push(`/admin/content/${contentType}/new`)}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nuevo {contentType === 'announcements' ? 'Anuncio' : contentType === 'devotionals' ? 'Devocional' : 'Evento'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Content List */}
+                  <div className="grid gap-6">
+                    {(contentType === 'announcements' ? announcements : contentType === 'devotionals' ? devotionals : events).length === 0 ? (
+                      <Card className="shadow-lg">
+                        <CardContent className="p-12 text-center">
+                          <h3 className="text-2xl font-semibold text-slate-900 mb-4">
+                            No hay {contentType === 'announcements' ? 'anuncios' : contentType === 'devotionals' ? 'devocionales' : 'eventos'}
+                          </h3>
+                          <p className="text-slate-600 mb-6">
+                            {contentType === 'announcements' 
+                              ? 'No hay anuncios creados aún.' 
+                              : contentType === 'devotionals'
+                              ? 'No hay devocionales creados aún.'
+                              : 'No hay eventos creados aún.'
+                            }
+                          </p>
+                          <Button 
+                            onClick={() => router.push(`/admin/content/${contentType}/new`)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Crear {contentType === 'announcements' ? 'Anuncio' : contentType === 'devotionals' ? 'Devocional' : 'Evento'}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      (contentType === 'announcements' ? announcements : contentType === 'devotionals' ? devotionals : events).map((item) => (
+                        <Card key={item.id} className="shadow-lg">
+                          <CardHeader>
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                                    <FileText className="w-5 h-5 text-white" />
+                                  </div>
+                                  <div>
+                                    <CardTitle className="text-xl text-slate-900">
+                                      {item.title}
+                                    </CardTitle>
+                                    <p className="text-slate-600">
+                                      {contentType === 'announcements' ? 'Anuncio' : contentType === 'devotionals' ? 'Devocional' : 'Evento'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-slate-600">
+                                  <span><strong>Estado:</strong> {getStatusBadge(contentType === 'events' ? (item.status || 'draft') : (item.published_at ? 'published' : 'draft'))}</span>
+                                  <span><strong>Creado:</strong> {formatDate(item.created_at)}</span>
+                                  <span><strong>Actualizado:</strong> {formatDate(item.updated_at)}</span>
+                                  {item.is_featured && (
+                                    <span><strong>Destacado:</strong> <Badge className="bg-yellow-600 text-white text-xs">Sí</Badge></span>
+                                  )}
+                                  {contentType === 'devotionals' && item.author && (
+                                    <span><strong>Autor:</strong> {item.author}</span>
+                                  )}
+                                  {contentType === 'devotionals' && item.scripture_reference && (
+                                    <span><strong>Referencia:</strong> {item.scripture_reference}</span>
+                                  )}
+                                  {contentType === 'events' && item.start_date && (
+                                    <span><strong>Fecha:</strong> {formatDate(item.start_date)}</span>
+                                  )}
+                                  {contentType === 'events' && item.location && (
+                                    <span><strong>Ubicación:</strong> {item.location}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => router.push(`/admin/content/${contentType}/${item.id}`)}
+                                    variant="outline"
+                                    size="sm"
+                                  >
+                                    Editar
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleDeleteContent(item.id, contentType)}
+                                    variant="destructive"
+                                    size="sm"
+                                    disabled={processingId === item.id}
+                                  >
+                                    {processingId === item.id ? (
+                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div 
+                              className="prose prose-sm max-w-none text-slate-600"
+                              dangerouslySetInnerHTML={{ 
+                                __html: (contentType === 'events' ? item.description : item.content) && (contentType === 'events' ? item.description : item.content).length > 200 
+                                  ? (contentType === 'events' ? item.description : item.content).substring(0, 200) + '...' 
+                                  : (contentType === 'events' ? item.description : item.content) || 'Sin descripción'
+                              }}
+                            />
+                            {(contentType === 'events' ? item.description : item.content) && (contentType === 'events' ? item.description : item.content).length > 200 && (
+                              <div className="mt-2 text-xs text-slate-500">
+                                (Contenido truncado - haz clic en "Editar" para ver completo)
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </div>
                 </div>
               )}
             </div>

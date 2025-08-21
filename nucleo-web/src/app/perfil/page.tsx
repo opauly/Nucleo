@@ -27,7 +27,7 @@ interface Profile {
 }
 
 export default function PerfilPage() {
-  const { user, loading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -50,15 +50,22 @@ export default function PerfilPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
+    // Don't do anything while still loading
+    if (authLoading) {
+      return
+    }
+
+    // If not loading and no user, redirect to login
+    if (!user) {
       router.push('/iniciar-sesion')
       return
     }
 
+    // If we have a user and supabase client, fetch profile
     if (user && supabase) {
       fetchProfile()
     }
-  }, [user, loading, supabase])
+  }, [user, authLoading, supabase, router])
 
   const fetchProfile = async () => {
     if (!user || !supabase) return
@@ -137,12 +144,14 @@ export default function PerfilPage() {
     }
   }
 
-  if (loading || isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 pt-16 lg:pt-20 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Cargando perfil...</p>
+          <p className="text-slate-600">
+            {authLoading ? 'Verificando autenticación...' : 'Cargando perfil...'}
+          </p>
         </div>
       </div>
     )
